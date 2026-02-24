@@ -1,65 +1,102 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { Car } from '@/types/car'
+import { getCars, deleteCar } from '@/lib/storage'
+import CarCard from '@/components/CarCard'
+import AddCarModal from '@/components/AddCarModal'
+
+export default function GaragePage() {
+  const [cars, setCars] = useState<Car[]>([])
+  const [showAdd, setShowAdd] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    setCars(getCars())
+  }, [])
+
+  const handleCarAdded = (car: Car) => {
+    setCars(getCars())
+    setShowAdd(false)
+  }
+
+  const handleDelete = (id: string) => {
+    deleteCar(id)
+    setCars(getCars())
+  }
+
+  if (!mounted) return null
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+      {/* Header */}
+      <header className="px-5 pt-14 pb-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+              My Garage
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              {cars.length === 0
+                ? 'Add your first car to get started'
+                : `${cars.length} car${cars.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-light shadow-sm active:scale-95 transition-transform"
+            style={{ background: 'var(--accent)' }}
+            aria-label="Add car"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            +
+          </button>
         </div>
+      </header>
+
+      {/* Car List */}
+      <main className="flex-1 px-4 pb-8">
+        {cars.length === 0 ? (
+          <EmptyState onAdd={() => setShowAdd(true)} />
+        ) : (
+          <div className="space-y-3">
+            {cars.map((car, i) => (
+              <div key={car.id} className="fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                <CarCard car={car} onDelete={() => handleDelete(car.id)} />
+              </div>
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Add Car Modal */}
+      {showAdd && (
+        <AddCarModal
+          onClose={() => setShowAdd(false)}
+          onAdd={handleCarAdded}
+        />
+      )}
     </div>
-  );
+  )
+}
+
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center pt-24 px-8 text-center">
+      <div className="text-7xl mb-5">🚗</div>
+      <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text)' }}>
+        Your garage is empty
+      </h2>
+      <p className="text-sm mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        Add your car and ask it anything — warning lights, maintenance schedules, and more.
+      </p>
+      <button
+        onClick={onAdd}
+        className="px-6 py-3 rounded-full text-sm font-semibold text-white shadow-sm active:scale-95 transition-transform"
+        style={{ background: 'var(--accent)' }}
+      >
+        Add My Car
+      </button>
+    </div>
+  )
 }
