@@ -1,4 +1,4 @@
-import { Car, ChatSession, Message } from '@/types/car'
+import { Car, ChatSession, Message, MaintenanceEntry } from '@/types/car'
 
 const CARS_KEY = 'askmycar:cars'
 const SESSIONS_KEY = 'askmycar:sessions'
@@ -28,7 +28,6 @@ export function saveCar(car: Car): void {
 export function deleteCar(id: string): void {
   const cars = getCars().filter(c => c.id !== id)
   localStorage.setItem(CARS_KEY, JSON.stringify(cars))
-  // also clean up session
   const sessions = getSessions()
   delete sessions[id]
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
@@ -67,4 +66,26 @@ export function clearSession(carId: string): void {
   const sessions = getSessions()
   sessions[carId] = { carId, messages: [] }
   localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+}
+
+// --- Maintenance ---
+
+export function getMaintenanceLog(carId: string): MaintenanceEntry[] {
+  const car = getCarById(carId)
+  return car?.maintenanceLog ?? []
+}
+
+export function addMaintenanceEntry(carId: string, entry: MaintenanceEntry): void {
+  const car = getCarById(carId)
+  if (!car) return
+  const log = car.maintenanceLog ?? []
+  log.push(entry)
+  saveCar({ ...car, maintenanceLog: log })
+}
+
+export function deleteMaintenanceEntry(carId: string, entryId: string): void {
+  const car = getCarById(carId)
+  if (!car) return
+  const log = (car.maintenanceLog ?? []).filter(e => e.id !== entryId)
+  saveCar({ ...car, maintenanceLog: log })
 }

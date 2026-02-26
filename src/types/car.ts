@@ -10,6 +10,29 @@ export interface Car {
   nickname?: string
   addedAt: string
   manualUrl?: string
+  imageUrl?: string
+  imageGenerating?: boolean
+  recalls?: RecallItem[]
+  hasOpenRecalls?: boolean
+  maintenanceLog?: MaintenanceEntry[]
+}
+
+export interface RecallItem {
+  NHTSAActionNumber: string
+  Component: string
+  Summary: string
+  Consequence: string
+  Remedy: string
+}
+
+export interface MaintenanceEntry {
+  id: string
+  type: string
+  label: string
+  date: string
+  mileage?: number
+  notes?: string
+  cost?: number
 }
 
 export interface Message {
@@ -18,6 +41,7 @@ export interface Message {
   content: string
   timestamp: string
   sources?: string[]
+  image?: string
 }
 
 export interface ChatSession {

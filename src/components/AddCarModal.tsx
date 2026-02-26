@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Car } from '@/types/car'
-import { saveCar } from '@/lib/storage'
+import { saveCar, getCarById } from '@/lib/storage'
 import { nanoid } from 'nanoid'
 
 interface Props {
@@ -12,6 +12,21 @@ interface Props {
 
 type Step = 'method' | 'vin' | 'manual' | 'confirm'
 type Method = 'vin' | 'manual'
+
+const CAR_COLORS = [
+  { label: 'White', value: 'white', hex: '#FFFFFF' },
+  { label: 'Black', value: 'black', hex: '#1a1a1a' },
+  { label: 'Silver', value: 'silver', hex: '#C0C0C0' },
+  { label: 'Gray', value: 'gray', hex: '#808080' },
+  { label: 'Blue', value: 'blue', hex: '#2563EB' },
+  { label: 'Red', value: 'red', hex: '#DC2626' },
+  { label: 'Brown', value: 'brown', hex: '#92400E' },
+  { label: 'Beige', value: 'beige', hex: '#D4B896' },
+  { label: 'Green', value: 'green', hex: '#16A34A' },
+  { label: 'Gold', value: 'gold', hex: '#B8860B' },
+  { label: 'Orange', value: 'orange', hex: '#EA580C' },
+  { label: 'Yellow', value: 'yellow', hex: '#CA8A04' },
+]
 
 const COMMON_MAKES = [
   'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler',
@@ -32,6 +47,7 @@ export default function AddCarModal({ onClose, onAdd }: Props) {
   const [model, setModel] = useState('')
   const [trim, setTrim] = useState('')
   const [nickname, setNickname] = useState('')
+  const [color, setColor] = useState('')
   const [decodedCar, setDecodedCar] = useState<Partial<Car> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -81,10 +97,61 @@ export default function AddCarModal({ onClose, onAdd }: Props) {
       make: decodedCar.make!,
       model: decodedCar.model!,
       nickname: nickname.trim() || undefined,
+      color: color || undefined,
       addedAt: new Date().toISOString(),
+      imageGenerating: true,
     }
     saveCar(car)
     onAdd(car)
+    // Kick off image generation in background
+    generateCarImage(car)
+    // Fetch recalls in background
+    fetchRecalls(car)
+  }
+
+  const fetchRecalls = async (car: Car) => {
+    try {
+      const res = await fetch(
+        `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&modelYear=${car.year}`
+      )
+      if (!res.ok) return
+      const data = await res.json()
+      const results = data.results || []
+      const recalls = results.map((r: Record<string, string>) => ({
+        NHTSAActionNumber: r.NHTSAActionNumber || '',
+        Component: r.Component || '',
+        Summary: r.Summary || '',
+        Consequence: r.Consequence || '',
+        Remedy: r.Remedy || '',
+      }))
+      const updated = getCarById(car.id)
+      if (updated) {
+        saveCar({ ...updated, recalls, hasOpenRecalls: recalls.length > 0 })
+      }
+    } catch (e) {
+      console.error('Failed to fetch recalls:', e)
+    }
+  }
+
+  const generateCarImage = async (car: Car) => {
+    try {
+      const params = new URLSearchParams({
+        year: String(car.year),
+        make: car.make,
+        model: car.model,
+      })
+      const res = await fetch(`/api/car-image?${params}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.url) {
+        const updated = getCarById(car.id)
+        if (updated) {
+          saveCar({ ...updated, imageUrl: data.url, imageGenerating: false })
+        }
+      }
+    } catch (e) {
+      console.error('Image generation failed:', e)
+    }
   }
 
   return (
@@ -272,6 +339,28 @@ export default function AddCarModal({ onClose, onAdd }: Props) {
                     VIN: {decodedCar.vin}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Color picker */}
+            <div className="mb-4">
+              <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Color</p>
+              <div className="flex flex-wrap gap-2">
+                {CAR_COLORS.map(c => (
+                  <button
+                    key={c.value}
+                    onClick={() => setColor(c.value)}
+                    title={c.label}
+                    className="w-8 h-8 rounded-full transition-transform active:scale-90"
+                    style={{
+                      background: c.hex,
+                      border: color === c.value
+                        ? '3px solid var(--accent)'
+                        : '2px solid var(--border)',
+                      boxShadow: c.value === 'white' ? 'inset 0 0 0 1px #d2d2d7' : undefined,
+                    }}
+                  />
+                ))}
               </div>
             </div>
 

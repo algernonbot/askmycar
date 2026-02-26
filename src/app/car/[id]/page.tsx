@@ -138,35 +138,52 @@ export default function CarChatPage({ params }: { params: Promise<{ id: string }
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <header
-        className="flex items-center gap-3 px-4 pt-12 pb-3 flex-shrink-0"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        <button
-          onClick={() => router.push('/')}
-          className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}
-          aria-label="Back"
-        >
-          ‹
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold truncate" style={{ color: 'var(--text)', fontSize: '16px' }}>
-            {displayName}
+      <header className="flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* Car Image Hero */}
+        {car.imageUrl && (
+          <div className="w-full relative" style={{ height: '160px', background: 'var(--bg-secondary)' }}>
+            <img
+              src={car.imageUrl}
+              alt={displayName}
+              className="w-full h-full object-contain"
+            />
           </div>
-          <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {car.trim ? `${car.trim} · ` : ''}{car.engine || `${car.year} ${car.make}`}
-          </div>
-        </div>
-        {messages.length > 0 && (
-          <button
-            onClick={() => { clearSession(car.id); setMessages([]) }}
-            className="text-xs px-3 py-1.5 rounded-full"
-            style={{ color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}
-          >
-            Clear
-          </button>
         )}
+        {car.imageGenerating && (
+          <div
+            className="w-full shimmer"
+            style={{ height: '160px', background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--border) 50%, var(--bg-secondary) 75%)', backgroundSize: '200% 100%' }}
+          />
+        )}
+
+        {/* Nav row */}
+        <div className="flex items-center gap-3 px-4 pt-3 pb-3">
+          <button
+            onClick={() => router.push('/')}
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}
+            aria-label="Back"
+          >
+            ‹
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold truncate" style={{ color: 'var(--text)', fontSize: '16px' }}>
+              {displayName}
+            </div>
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {car.trim ? `${car.trim} · ` : ''}{car.engine || `${car.year} ${car.make}`}
+            </div>
+          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={() => { clearSession(car.id); setMessages([]) }}
+              className="text-xs px-3 py-1.5 rounded-full"
+              style={{ color: 'var(--text-tertiary)', background: 'var(--bg-secondary)' }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Messages */}

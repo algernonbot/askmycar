@@ -53,6 +53,16 @@ body {
 .dot-2 { animation: blink 1.2s infinite 0.2s; }
 .dot-3 { animation: blink 1.2s infinite 0.4s; }
 
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.shimmer {
+  animation: shimmer 1.5s infinite linear;
+}
+
 /* Fade in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
